@@ -1,5 +1,3 @@
-<!-- index.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -98,7 +96,6 @@
 
       <label for="guests">Number of Guests</label>
       <select id="guests" name="guests" required>
-        <!-- Adjust or add more options as needed -->
         <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
@@ -125,41 +122,44 @@
     </form>
     <!-- RSVP FORM END -->
 
+    <!-- Stripe.js Library -->
     <script src="https://js.stripe.com/v3/"></script>
     <button type="button" class="button" id="checkout-button">Pay & RSVP</button>
   </div>
 
   <script>
-    // --- CALCULATE TOTAL AMOUNT ON GUEST CHANGE ---
+    // Wait until the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', () => {
+      // 1) Update total cost as guests change
       const guestsField = document.getElementById('guests');
       const totalAmount = document.getElementById('total-amount');
 
       guestsField.addEventListener('change', () => {
         const numberOfGuests = parseInt(guestsField.value, 10);
-        const total = numberOfGuests * 125; // cost set to $125
+        const total = numberOfGuests * 125; // Cost is $125 per guest
         totalAmount.textContent = `Total: $${total}`;
       });
 
-      // --- PREPARE STRIPE ---
-      const stripe = Stripe('your-publishable-key-here'); // Replace with your Stripe public key
+      // 2) Prepare Stripe
+      // Replace 'your-publishable-key-here' with your actual Stripe public (publishable) key
+      const stripe = Stripe('your-publishable-key-here'); 
 
-      // --- HANDLE PAYMENT & RSVP ---
+      // 3) Handle "Pay & RSVP" button
       document.getElementById('checkout-button').addEventListener('click', async () => {
-        // 1) Gather data from the form
+        // Gather form data
         const nameValue = document.getElementById('name').value;
         const emailValue = document.getElementById('email').value;
         const phoneValue = document.getElementById('phone').value;
         const guestsValue = document.getElementById('guests').value;
         const commentsValue = document.getElementById('comments').value;
 
-        // Basic validation
+        // Quick validation
         if (!nameValue || !emailValue || !phoneValue || !guestsValue) {
           alert('Please fill in all required fields.');
           return;
         }
 
-        // 2) Send RSVP data to Google Apps Script
+        // 4) Send data to Google Apps Script
         const formData = {
           name: nameValue,
           email: emailValue,
@@ -169,27 +169,28 @@
         };
 
         try {
-          const response = await fetch(
-            'https://script.google.com/macros/s/AKfycby7U0ijCw-4mgdRpH1e9krl7N7EnzYj9ZYDLaxrugksZgz4fOVVnuouUOOp4jBUWYni5g/exec',
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(formData)
-            }
-          );
+          // Replace this URL with your own deployed Apps Script URL
+          const scriptUrl = 'https://script.google.com/macros/s/AKfycbxyz/exec';
+
+          const response = await fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
 
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
 
+          // If RSVP was recorded successfully, proceed to payment
           alert('Your RSVP has been recorded. Proceeding to payment...');
 
-          // 3) Redirect to Stripe Checkout
-          // Replace 'price_id_here' with the actual price ID in your Stripe account for $125
+          // 5) Redirect to Stripe Checkout
+          // Replace 'price_id_here' with your actual Price ID for $125 in Stripe
           const { error } = await stripe.redirectToCheckout({
             lineItems: [
               {
-                price: 'price_id_here',
+                price: 'price_id_here', // e.g. "price_1N7AAA..."
                 quantity: parseInt(guestsValue, 10)
               }
             ],
