@@ -66,6 +66,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <img
@@ -75,6 +76,7 @@
     />
     <h1>Wine Tasting RSVP & Payment</h1>
     <h2>Event by M&M Importers & Les Vins IDS</h2>
+
     <p style="font-size: 14px;">
       Where? <strong>Bordeaux Steakhouse</strong><br />
       1922 Coney Island Ave, Brooklyn, NY 11230
@@ -96,6 +98,7 @@
 
       <label for="guests">Number of Guests</label>
       <select id="guests" name="guests" required>
+        <!-- Adjust options as needed -->
         <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
@@ -122,29 +125,22 @@
     </form>
     <!-- RSVP FORM END -->
 
-    <!-- Stripe.js Library -->
-    <script src="https://js.stripe.com/v3/"></script>
     <button type="button" class="button" id="checkout-button">Pay & RSVP</button>
   </div>
 
   <script>
-    // Wait until the DOM is fully loaded
     document.addEventListener('DOMContentLoaded', () => {
-      // 1) Update total cost as guests change
+      // 1. Calculate total on guest change
       const guestsField = document.getElementById('guests');
       const totalAmount = document.getElementById('total-amount');
 
       guestsField.addEventListener('change', () => {
         const numberOfGuests = parseInt(guestsField.value, 10);
-        const total = numberOfGuests * 125; // Cost is $125 per guest
+        const total = numberOfGuests * 125;
         totalAmount.textContent = `Total: $${total}`;
       });
 
-      // 2) Prepare Stripe
-      // Replace 'your-publishable-key-here' with your actual Stripe public (publishable) key
-      const stripe = Stripe('your-publishable-key-here'); 
-
-      // 3) Handle "Pay & RSVP" button
+      // 2. Handle "Pay & RSVP" button click
       document.getElementById('checkout-button').addEventListener('click', async () => {
         // Gather form data
         const nameValue = document.getElementById('name').value;
@@ -153,13 +149,13 @@
         const guestsValue = document.getElementById('guests').value;
         const commentsValue = document.getElementById('comments').value;
 
-        // Quick validation
+        // Basic validation
         if (!nameValue || !emailValue || !phoneValue || !guestsValue) {
           alert('Please fill in all required fields.');
           return;
         }
 
-        // 4) Send data to Google Apps Script
+        // Prepare the JSON data
         const formData = {
           name: nameValue,
           email: emailValue,
@@ -168,9 +164,10 @@
           comments: commentsValue
         };
 
+        // 3. Send RSVP to Google Apps Script
         try {
-          // Replace this URL with your own deployed Apps Script URL
-          const scriptUrl = 'https://script.google.com/macros/s/AKfycbxyz/exec';
+          // TODO: Replace with your actual Web App URL from Apps Script
+          const scriptUrl = 'https://script.google.com/macros/s/AKfycbxXM6q5IzxCdT0UrjYDNXrnVCeB-cAG2ECTQj9NniwSN3oLrkpX9GM18V8uP3IzhR2-rQ/exec';
 
           const response = await fetch(scriptUrl, {
             method: 'POST',
@@ -182,26 +179,21 @@
             throw new Error('Network response was not ok');
           }
 
-          // If RSVP was recorded successfully, proceed to payment
+          // If RSVP is successful, proceed to Cardknox
           alert('Your RSVP has been recorded. Proceeding to payment...');
 
-          // 5) Redirect to Stripe Checkout
-          // Replace 'price_id_here' with your actual Price ID for $125 in Stripe
-          const { error } = await stripe.redirectToCheckout({
-            lineItems: [
-              {
-                price: 'price_id_here', // e.g. "price_1N7AAA..."
-                quantity: parseInt(guestsValue, 10)
-              }
-            ],
-            mode: 'payment',
-            successUrl: 'https://your-success-url.com',
-            cancelUrl: 'https://your-cancel-url.com'
-          });
+          // 4. Redirect to Cardknox Payment Link
+          // For 2 guests => $250, 3 guests => $375, etc.
+          const numberOfGuests = parseInt(guestsValue, 10);
+          const totalCost = numberOfGuests * 125;
 
-          if (error) {
-            alert(error.message);
-          }
+          // We'll pass the total cost as a query parameter "Amount"
+          // TODO: If Cardknox doesn't require "?Amount=", remove or edit this param
+          const cardknoxURL = `https://secure.cardknox.com/mmimporters?Amount=${totalCost}`;
+
+          // Redirect user to Cardknox's hosted page
+          window.location.href = cardknoxURL;
+
         } catch (err) {
           console.error(err);
           alert('Error submitting RSVP. Please try again.');
