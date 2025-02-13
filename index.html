@@ -96,5 +96,109 @@
       <label for="phone">Phone Number</label>
       <input type="tel" id="phone" name="phone" required />
 
-      <label for="guests">Number of Guests</label
+      <label for="guests">Number of Guests</label>
+      <select id="guests" name="guests" required>
+        <option value="1" selected>1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
 
+      <label for="comments">Additional Comments (optional)</label>
+      <textarea
+        id="comments"
+        name="comments"
+        rows="4"
+        placeholder="Enter any special requests or notes..."
+      ></textarea>
+
+      <h2>Payment</h2>
+      <p>Cost per guest: $150</p>
+      <p id="total-amount">Total: $150</p>
+    </form>
+    <!-- RSVP FORM END -->
+
+    <button type="button" class="button" id="checkout-button">Pay & RSVP</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Cost per guest
+      const COST_PER_GUEST = 150;
+
+      // HTML elements
+      const guestsField = document.getElementById('guests');
+      const totalAmount = document.getElementById('total-amount');
+      const checkoutButton = document.getElementById('checkout-button');
+
+      // Update the total cost when the number of guests changes
+      guestsField.addEventListener('change', () => {
+        const numberOfGuests = parseInt(guestsField.value, 10);
+        const total = numberOfGuests * COST_PER_GUEST;
+        totalAmount.textContent = `Total: $${total}`;
+      });
+
+      // Handle "Pay & RSVP" button
+      checkoutButton.addEventListener('click', async () => {
+        const nameValue = document.getElementById('name').value;
+        const emailValue = document.getElementById('email').value;
+        const phoneValue = document.getElementById('phone').value;
+        const guestsValue = parseInt(document.getElementById('guests').value, 10);
+        const commentsValue = document.getElementById('comments').value;
+
+        // Basic validation
+        if (!nameValue || !emailValue || !phoneValue || !guestsValue) {
+          alert('Please fill in all required fields.');
+          return;
+        }
+
+        // Calculate total cost
+        const totalCost = guestsValue * COST_PER_GUEST;
+
+        // Prepare the data to send
+        const formData = {
+          name: nameValue,
+          email: emailValue,
+          phone: phoneValue,
+          guests: guestsValue,
+          comments: commentsValue
+        };
+
+        try {
+          // Replace this with your actual Apps Script Web App URL
+          const scriptUrl =
+            'https://script.google.com/macros/s/AKfycbxXM6q5IzxCdT0UrjYDNXrnVCeB-cAG2ECTQj9NniwSN3oLrkpX9GM18V8uP3IzhR2-rQ/exec';
+
+          // 1) Send RSVP to Google Apps Script (to record in your Sheet)
+          const response = await fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+
+          if (!response.ok) {
+            throw new Error('Error: RSVP submission failed');
+          }
+
+          // 2) If RSVP is successful, redirect user to Cardknox
+          alert('Your RSVP has been recorded. Proceeding to payment...');
+
+          // Cardknox link with "Amount" query parameter
+          window.location.href =
+            `https://secure.cardknox.com/mmimporters?Amount=${totalCost}`;
+
+        } catch (err) {
+          console.error('RSVP Error:', err);
+          alert('Error submitting RSVP. Please try again.');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
