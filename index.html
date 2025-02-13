@@ -98,7 +98,6 @@
 
       <label for="guests">Number of Guests</label>
       <select id="guests" name="guests" required>
-        <!-- Adjust options as needed -->
         <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
@@ -130,23 +129,24 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. Calculate total on guest change
+      // 1. Update total based on guests
       const guestsField = document.getElementById('guests');
       const totalAmount = document.getElementById('total-amount');
+      const costPerGuest = 150;
 
       guestsField.addEventListener('change', () => {
         const numberOfGuests = parseInt(guestsField.value, 10);
-        const total = numberOfGuests * 150; // <-- Now 150
+        const total = numberOfGuests * costPerGuest;
         totalAmount.textContent = `Total: $${total}`;
       });
 
-      // 2. Handle "Pay & RSVP" button click
+      // 2. Handle "Pay & RSVP" click
       document.getElementById('checkout-button').addEventListener('click', async () => {
         // Gather form data
         const nameValue = document.getElementById('name').value;
         const emailValue = document.getElementById('email').value;
         const phoneValue = document.getElementById('phone').value;
-        const guestsValue = document.getElementById('guests').value;
+        const guestsValue = parseInt(document.getElementById('guests').value, 10);
         const commentsValue = document.getElementById('comments').value;
 
         // Basic validation
@@ -155,7 +155,7 @@
           return;
         }
 
-        // Prepare the JSON data
+        // 3. Prepare data for submission
         const formData = {
           name: nameValue,
           email: emailValue,
@@ -164,11 +164,11 @@
           comments: commentsValue
         };
 
-        // 3. Send RSVP to Google Apps Script
         try {
-          // Replace with your actual Web App URL from Apps Script
+          // Replace this with your actual Google Apps Script Web App URL
           const scriptUrl = 'https://script.google.com/macros/s/YOUR_WEB_APP_URL/exec';
 
+          // Send RSVP info to Google Apps Script
           const response = await fetch(scriptUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -179,18 +179,13 @@
             throw new Error('Network response was not ok');
           }
 
-          // If RSVP is successful, proceed to Cardknox
+          // Notify user, then redirect to Cardknox
           alert('Your RSVP has been recorded. Proceeding to payment...');
 
-          // 4. Redirect to Cardknox Payment Link
-          // For 2 guests => $300, 3 guests => $450, etc.
-          const numberOfGuests = parseInt(guestsValue, 10);
-          const totalCost = numberOfGuests * 150; // Now 150
+          // 4. Calculate total cost and redirect with MyParam
+          const totalCost = guestsValue * costPerGuest;
+          const cardknoxURL = `https://secure.cardknox.com/mmimporters?MyParam=${totalCost}`;
 
-          // We'll pass the total cost as a query parameter "Amount"
-          const cardknoxURL = `https://secure.cardknox.com/mmimporters?Amount=${totalCost}`;
-
-          // Redirect user to Cardknox's hosted page
           window.location.href = cardknoxURL;
 
         } catch (err) {
