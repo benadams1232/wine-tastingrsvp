@@ -98,7 +98,8 @@
 
       <label for="guests">Number of Guests</label>
       <select id="guests" name="guests" required>
-        <option value="1" selected>1</option>
+        <!-- Adjust options as needed -->
+        <option value="1">1</option>
         <option value="2">2</option>
         <option value="3">3</option>
         <option value="4">4</option>
@@ -129,27 +130,23 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Cost per guest
-      const COST_PER_GUEST = 150;
-
-      // HTML elements
+      // 1. Calculate total on guest change
       const guestsField = document.getElementById('guests');
       const totalAmount = document.getElementById('total-amount');
-      const checkoutButton = document.getElementById('checkout-button');
 
-      // Update the total cost when the number of guests changes
       guestsField.addEventListener('change', () => {
         const numberOfGuests = parseInt(guestsField.value, 10);
-        const total = numberOfGuests * COST_PER_GUEST;
+        const total = numberOfGuests * 150; // <-- Now 150
         totalAmount.textContent = `Total: $${total}`;
       });
 
-      // Handle "Pay & RSVP" button
-      checkoutButton.addEventListener('click', async () => {
+      // 2. Handle "Pay & RSVP" button click
+      document.getElementById('checkout-button').addEventListener('click', async () => {
+        // Gather form data
         const nameValue = document.getElementById('name').value;
         const emailValue = document.getElementById('email').value;
         const phoneValue = document.getElementById('phone').value;
-        const guestsValue = parseInt(document.getElementById('guests').value, 10);
+        const guestsValue = document.getElementById('guests').value;
         const commentsValue = document.getElementById('comments').value;
 
         // Basic validation
@@ -158,10 +155,7 @@
           return;
         }
 
-        // Calculate total cost
-        const totalCost = guestsValue * COST_PER_GUEST;
-
-        // Prepare the data to send
+        // Prepare the JSON data
         const formData = {
           name: nameValue,
           email: emailValue,
@@ -170,12 +164,11 @@
           comments: commentsValue
         };
 
+        // 3. Send RSVP to Google Apps Script
         try {
-          // Replace this with your actual Apps Script Web App URL
-          const scriptUrl =
-            'https://script.google.com/macros/s/AKfycbxXM6q5IzxCdT0UrjYDNXrnVCeB-cAG2ECTQj9NniwSN3oLrkpX9GM18V8uP3IzhR2-rQ/exec';
+          // Replace with your actual Web App URL from Apps Script
+          const scriptUrl = 'https://script.google.com/macros/s/YOUR_WEB_APP_URL/exec';
 
-          // 1) Send RSVP to Google Apps Script (to record in your Sheet)
           const response = await fetch(scriptUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -183,18 +176,25 @@
           });
 
           if (!response.ok) {
-            throw new Error('Error: RSVP submission failed');
+            throw new Error('Network response was not ok');
           }
 
-          // 2) If RSVP is successful, redirect user to Cardknox
+          // If RSVP is successful, proceed to Cardknox
           alert('Your RSVP has been recorded. Proceeding to payment...');
 
-          // Cardknox link with "Amount" query parameter
-          window.location.href =
-            `https://secure.cardknox.com/mmimporters?Amount=${totalCost}`;
+          // 4. Redirect to Cardknox Payment Link
+          // For 2 guests => $300, 3 guests => $450, etc.
+          const numberOfGuests = parseInt(guestsValue, 10);
+          const totalCost = numberOfGuests * 150; // Now 150
+
+          // We'll pass the total cost as a query parameter "Amount"
+          const cardknoxURL = `https://secure.cardknox.com/mmimporters?Amount=${totalCost}`;
+
+          // Redirect user to Cardknox's hosted page
+          window.location.href = cardknoxURL;
 
         } catch (err) {
-          console.error('RSVP Error:', err);
+          console.error(err);
           alert('Error submitting RSVP. Please try again.');
         }
       });
